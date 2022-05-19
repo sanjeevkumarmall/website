@@ -1,0 +1,59 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title></title>
+</head>
+<body>
+&lt;?php<br/>
+<br/>
+if(isset($message)){<br/>
+   foreach($message as $message){<br/>
+      echo &#39;<br/>
+      &lt;div class=&quot;message&quot;&gt;<br/>
+         &lt;span&gt;&#39;.$message.&#39;&lt;/span&gt;<br/>
+         &lt;i class=&quot;fas fa&ndash;times&quot; onclick=&quot;this.parentElement.remove();&quot;&gt;&lt;/i&gt;<br/>
+      &lt;/div&gt;<br/>
+      &#39;;<br/>
+   }<br/>
+}<br/>
+<br/>
+?&gt;<br/>
+<br/>
+&lt;header class=&quot;header&quot;&gt;<br/>
+<br/>
+   &lt;div class=&quot;flex&quot;&gt;<br/>
+<br/>
+      &lt;a href=&quot;admin_page.php&quot; class=&quot;logo&quot;&gt;Admin&lt;span&gt;Panel&lt;/span&gt;&lt;/a&gt;<br/>
+<br/>
+      &lt;nav class=&quot;navbar&quot;&gt;<br/>
+         &lt;a href=&quot;admin_page.php&quot;&gt;home&lt;/a&gt;<br/>
+         &lt;a href=&quot;admin_products.php&quot;&gt;products&lt;/a&gt;<br/>
+         &lt;a href=&quot;admin_orders.php&quot;&gt;orders&lt;/a&gt;<br/>
+         &lt;a href=&quot;admin_users.php&quot;&gt;users&lt;/a&gt;<br/>
+         &lt;a href=&quot;admin_contacts.php&quot;&gt;messages&lt;/a&gt;<br/>
+      &lt;/nav&gt;<br/>
+<br/>
+      &lt;div class=&quot;icons&quot;&gt;<br/>
+         &lt;div id=&quot;menu&ndash;btn&quot; class=&quot;fas fa&ndash;bars&quot;&gt;&lt;/div&gt;<br/>
+         &lt;div id=&quot;user&ndash;btn&quot; class=&quot;fas fa&ndash;user&quot;&gt;&lt;/div&gt;<br/>
+      &lt;/div&gt;<br/>
+<br/>
+      &lt;div class=&quot;profile&quot;&gt;<br/>
+         &lt;?php<br/>
+            $select_profile = $conn&ndash;&gt;prepare(&quot;SELECT * FROM `users` WHERE id = ?&quot;);<br/>
+            $select_profile&ndash;&gt;execute([$admin_id]);<br/>
+            $fetch_profile = $select_profile&ndash;&gt;fetch(PDO::FETCH_ASSOC);<br/>
+         ?&gt;<br/>
+         &lt;img src=&quot;uploaded_img/&lt;?= $fetch_profile[&#39;image&#39;]; ?&gt;&quot; alt=&quot;&quot;&gt;<br/>
+         &lt;p&gt;&lt;?= $fetch_profile[&#39;name&#39;]; ?&gt;&lt;/p&gt;<br/>
+         &lt;a href=&quot;admin_update_profile.php&quot; class=&quot;btn&quot;&gt;update profile&lt;/a&gt;<br/>
+         &lt;a href=&quot;logout.php&quot; class=&quot;delete&ndash;btn&quot;&gt;logout&lt;/a&gt;<br/>
+         &lt;div class=&quot;flex&ndash;btn&quot;&gt;<br/>
+            &lt;a href=&quot;login.php&quot; class=&quot;option&ndash;btn&quot;&gt;login&lt;/a&gt;<br/>
+            &lt;a href=&quot;register.php&quot; class=&quot;option&ndash;btn&quot;&gt;register&lt;/a&gt;<br/>
+         &lt;/div&gt;<br/>
+      &lt;/div&gt;<br/>
+<br/>
+   &lt;/div&gt;<br/>
+<br/>
+&lt;/header&gt;</body></html>

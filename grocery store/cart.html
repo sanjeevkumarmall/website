@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title></title>
+</head>
+<body>
+&lt;?php<br/>
+<br/>
+@include &#39;config.php&#39;;<br/>
+<br/>
+session_start();<br/>
+<br/>
+$user_id = $_SESSION[&#39;user_id&#39;];<br/>
+<br/>
+if(!isset($user_id)){<br/>
+   header(&#39;location:login.php&#39;);<br/>
+};<br/>
+<br/>
+if(isset($_GET[&#39;delete&#39;])){<br/>
+   $delete_id = $_GET[&#39;delete&#39;];<br/>
+   $delete_cart_item = $conn&ndash;&gt;prepare(&quot;DELETE FROM `cart` WHERE id = ?&quot;);<br/>
+   $delete_cart_item&ndash;&gt;execute([$delete_id]);<br/>
+   header(&#39;location:cart.php&#39;);<br/>
+}<br/>
+<br/>
+if(isset($_GET[&#39;delete_all&#39;])){<br/>
+   $delete_cart_item = $conn&ndash;&gt;prepare(&quot;DELETE FROM `cart` WHERE user_id = ?&quot;);<br/>
+   $delete_cart_item&ndash;&gt;execute([$user_id]);<br/>
+   header(&#39;location:cart.php&#39;);<br/>
+}<br/>
+<br/>
+if(isset($_POST[&#39;update_qty&#39;])){<br/>
+   $cart_id = $_POST[&#39;cart_id&#39;];<br/>
+   $p_qty = $_POST[&#39;p_qty&#39;];<br/>
+   $p_qty = filter_var($p_qty, FILTER_SANITIZE_STRING);<br/>
+   $update_qty = $conn&ndash;&gt;prepare(&quot;UPDATE `cart` SET quantity = ? WHERE id = ?&quot;);<br/>
+   $update_qty&ndash;&gt;execute([$p_qty, $cart_id]);<br/>
+   $message[] = &#39;cart quantity updated&#39;;<br/>
+}<br/>
+<br/>
+?&gt;<br/>
+<br/>
+&lt;!DOCTYPE html&gt;<br/>
+&lt;html lang=&quot;en&quot;&gt;<br/>
+&lt;head&gt;<br/>
+   &lt;meta charset=&quot;UTF&ndash;8&quot;&gt;<br/>
+   &lt;meta http&ndash;equiv=&quot;X&ndash;UA&ndash;Compatible&quot; content=&quot;IE=edge&quot;&gt;<br/>
+   &lt;meta name=&quot;viewport&quot; content=&quot;width=device&ndash;width, initial&ndash;scale=1.0&quot;&gt;<br/>
+   &lt;title&gt;shopping cart&lt;/title&gt;<br/>
+<br/>
+   &lt;!&ndash;&ndash; font awesome cdn link  &ndash;&ndash;&gt;<br/>
+   &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdnjs.cloudflare.com/ajax/libs/font&ndash;awesome/6.1.1/css/all.min.css&quot;&gt;<br/>
+<br/>
+   &lt;!&ndash;&ndash; custom css file link  &ndash;&ndash;&gt;<br/>
+   &lt;link rel=&quot;stylesheet&quot; href=&quot;css/style.css&quot;&gt;<br/>
+<br/>
+&lt;/head&gt;<br/>
+&lt;body&gt;<br/>
+   <br/>
+&lt;?php include &#39;header.php&#39;; ?&gt;<br/>
+<br/>
+&lt;section class=&quot;shopping&ndash;cart&quot;&gt;<br/>
+<br/>
+   &lt;h1 class=&quot;title&quot;&gt;products added&lt;/h1&gt;<br/>
+<br/>
+   &lt;div class=&quot;box&ndash;container&quot;&gt;<br/>
+<br/>
+   &lt;?php<br/>
+      $grand_total = 0;<br/>
+      $select_cart = $conn&ndash;&gt;prepare(&quot;SELECT * FROM `cart` WHERE user_id = ?&quot;);<br/>
+      $select_cart&ndash;&gt;execute([$user_id]);<br/>
+      if($select_cart&ndash;&gt;rowCount() &gt; 0){<br/>
+         while($fetch_cart = $select_cart&ndash;&gt;fetch(PDO::FETCH_ASSOC)){ <br/>
+   ?&gt;<br/>
+   &lt;form action=&quot;&quot; method=&quot;POST&quot; class=&quot;box&quot;&gt;<br/>
+      &lt;a href=&quot;cart.php?delete=&lt;?= $fetch_cart[&#39;id&#39;]; ?&gt;&quot; class=&quot;fas fa&ndash;times&quot; onclick=&quot;return confirm(&#39;delete this from cart?&#39;);&quot;&gt;&lt;/a&gt;<br/>
+      &lt;a href=&quot;view_page.php?pid=&lt;?= $fetch_cart[&#39;pid&#39;]; ?&gt;&quot; class=&quot;fas fa&ndash;eye&quot;&gt;&lt;/a&gt;<br/>
+      &lt;img src=&quot;uploaded_img/&lt;?= $fetch_cart[&#39;image&#39;]; ?&gt;&quot; alt=&quot;&quot;&gt;<br/>
+      &lt;div class=&quot;name&quot;&gt;&lt;?= $fetch_cart[&#39;name&#39;]; ?&gt;&lt;/div&gt;<br/>
+      &lt;div class=&quot;price&quot;&gt;$&lt;?= $fetch_cart[&#39;price&#39;]; ?&gt;/&ndash;&lt;/div&gt;<br/>
+      &lt;input type=&quot;hidden&quot; name=&quot;cart_id&quot; value=&quot;&lt;?= $fetch_cart[&#39;id&#39;]; ?&gt;&quot;&gt;<br/>
+      &lt;div class=&quot;flex&ndash;btn&quot;&gt;<br/>
+         &lt;input type=&quot;number&quot; min=&quot;1&quot; value=&quot;&lt;?= $fetch_cart[&#39;quantity&#39;]; ?&gt;&quot; class=&quot;qty&quot; name=&quot;p_qty&quot;&gt;<br/>
+         &lt;input type=&quot;submit&quot; value=&quot;update&quot; name=&quot;update_qty&quot; class=&quot;option&ndash;btn&quot;&gt;<br/>
+      &lt;/div&gt;<br/>
+      &lt;div class=&quot;sub&ndash;total&quot;&gt; sub total : &lt;span&gt;$&lt;?= $sub_total = ($fetch_cart[&#39;price&#39;] * $fetch_cart[&#39;quantity&#39;]); ?&gt;/&ndash;&lt;/span&gt; &lt;/div&gt;<br/>
+   &lt;/form&gt;<br/>
+   &lt;?php<br/>
+      $grand_total += $sub_total;<br/>
+      }<br/>
+   }else{<br/>
+      echo &#39;&lt;p class=&quot;empty&quot;&gt;your cart is empty&lt;/p&gt;&#39;;<br/>
+   }<br/>
+   ?&gt;<br/>
+   &lt;/div&gt;<br/>
+<br/>
+   &lt;div class=&quot;cart&ndash;total&quot;&gt;<br/>
+      &lt;p&gt;grand total : &lt;span&gt;$&lt;?= $grand_total; ?&gt;/&ndash;&lt;/span&gt;&lt;/p&gt;<br/>
+      &lt;a href=&quot;shop.php&quot; class=&quot;option&ndash;btn&quot;&gt;continue shopping&lt;/a&gt;<br/>
+      &lt;a href=&quot;cart.php?delete_all&quot; class=&quot;delete&ndash;btn &lt;?= ($grand_total &gt; 1)?&#39;&#39;:&#39;disabled&#39;; ?&gt;&quot;&gt;delete all&lt;/a&gt;<br/>
+      &lt;a href=&quot;checkout.php&quot; class=&quot;btn &lt;?= ($grand_total &gt; 1)?&#39;&#39;:&#39;disabled&#39;; ?&gt;&quot;&gt;proceed to checkout&lt;/a&gt;<br/>
+   &lt;/div&gt;<br/>
+<br/>
+&lt;/section&gt;<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+&lt;?php include &#39;footer.php&#39;; ?&gt;<br/>
+<br/>
+&lt;script src=&quot;js/script.js&quot;&gt;&lt;/script&gt;<br/>
+<br/>
+&lt;/body&gt;<br/>
+&lt;/html&gt;</body></html>

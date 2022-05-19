@@ -1,0 +1,142 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title></title>
+</head>
+<body>
+&lt;?php<br/>
+<br/>
+@include &#39;config.php&#39;;<br/>
+<br/>
+session_start();<br/>
+<br/>
+$admin_id = $_SESSION[&#39;admin_id&#39;];<br/>
+<br/>
+if(!isset($admin_id)){<br/>
+   header(&#39;location:login.php&#39;);<br/>
+};<br/>
+<br/>
+if(isset($_POST[&#39;update_profile&#39;])){<br/>
+<br/>
+   $name = $_POST[&#39;name&#39;];<br/>
+   $name = filter_var($name, FILTER_SANITIZE_STRING);<br/>
+   $email = $_POST[&#39;email&#39;];<br/>
+   $email = filter_var($email, FILTER_SANITIZE_STRING);<br/>
+<br/>
+   $update_profile = $conn&ndash;&gt;prepare(&quot;UPDATE `users` SET name = ?, email = ? WHERE id = ?&quot;);<br/>
+   $update_profile&ndash;&gt;execute([$name, $email, $admin_id]);<br/>
+<br/>
+   $image = $_FILES[&#39;image&#39;][&#39;name&#39;];<br/>
+   $image = filter_var($image, FILTER_SANITIZE_STRING);<br/>
+   $image_size = $_FILES[&#39;image&#39;][&#39;size&#39;];<br/>
+   $image_tmp_name = $_FILES[&#39;image&#39;][&#39;tmp_name&#39;];<br/>
+   $image_folder = &#39;uploaded_img/&#39;.$image;<br/>
+   $old_image = $_POST[&#39;old_image&#39;];<br/>
+<br/>
+   if(!empty($image)){<br/>
+      if($image_size &gt; 2000000){<br/>
+         $message[] = &#39;image size is too large!&#39;;<br/>
+      }else{<br/>
+         $update_image = $conn&ndash;&gt;prepare(&quot;UPDATE `users` SET image = ? WHERE id = ?&quot;);<br/>
+         $update_image&ndash;&gt;execute([$image, $admin_id]);<br/>
+         if($update_image){<br/>
+            move_uploaded_file($image_tmp_name, $image_folder);<br/>
+            unlink(&#39;uploaded_img/&#39;.$old_image);<br/>
+            $message[] = &#39;image updated successfully!&#39;;<br/>
+         };<br/>
+      };<br/>
+   };<br/>
+<br/>
+   $old_pass = $_POST[&#39;old_pass&#39;];<br/>
+   $update_pass = md5($_POST[&#39;update_pass&#39;]);<br/>
+   $update_pass = filter_var($update_pass, FILTER_SANITIZE_STRING);<br/>
+   $new_pass = md5($_POST[&#39;new_pass&#39;]);<br/>
+   $new_pass = filter_var($new_pass, FILTER_SANITIZE_STRING);<br/>
+   $confirm_pass = md5($_POST[&#39;confirm_pass&#39;]);<br/>
+   $confirm_pass = filter_var($confirm_pass, FILTER_SANITIZE_STRING);<br/>
+<br/>
+   if(!empty($update_pass) AND !empty($new_pass) AND !empty($confirm_pass)){<br/>
+      if($update_pass != $old_pass){<br/>
+         $message[] = &#39;old password not matched!&#39;;<br/>
+      }elseif($new_pass != $confirm_pass){<br/>
+         $message[] = &#39;confirm password not matched!&#39;;<br/>
+      }else{<br/>
+         $update_pass_query = $conn&ndash;&gt;prepare(&quot;UPDATE `users` SET password = ? WHERE id = ?&quot;);<br/>
+         $update_pass_query&ndash;&gt;execute([$confirm_pass, $admin_id]);<br/>
+         $message[] = &#39;password updated successfully!&#39;;<br/>
+      }<br/>
+   }<br/>
+<br/>
+}<br/>
+<br/>
+?&gt;<br/>
+<br/>
+&lt;!DOCTYPE html&gt;<br/>
+&lt;html lang=&quot;en&quot;&gt;<br/>
+&lt;head&gt;<br/>
+   &lt;meta charset=&quot;UTF&ndash;8&quot;&gt;<br/>
+   &lt;meta http&ndash;equiv=&quot;X&ndash;UA&ndash;Compatible&quot; content=&quot;IE=edge&quot;&gt;<br/>
+   &lt;meta name=&quot;viewport&quot; content=&quot;width=device&ndash;width, initial&ndash;scale=1.0&quot;&gt;<br/>
+   &lt;title&gt;update admin profile&lt;/title&gt;<br/>
+<br/>
+   &lt;!&ndash;&ndash; font awesome cdn link  &ndash;&ndash;&gt;<br/>
+   &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdnjs.cloudflare.com/ajax/libs/font&ndash;awesome/6.1.1/css/all.min.css&quot;&gt;<br/>
+<br/>
+   &lt;!&ndash;&ndash; custom css file link  &ndash;&ndash;&gt;<br/>
+   &lt;link rel=&quot;stylesheet&quot; href=&quot;css/components.css&quot;&gt;<br/>
+<br/>
+&lt;/head&gt;<br/>
+&lt;body&gt;<br/>
+   <br/>
+&lt;?php include &#39;admin_header.php&#39;; ?&gt;<br/>
+<br/>
+&lt;section class=&quot;update&ndash;profile&quot;&gt;<br/>
+<br/>
+   &lt;h1 class=&quot;title&quot;&gt;update profile&lt;/h1&gt;<br/>
+<br/>
+   &lt;form action=&quot;&quot; method=&quot;POST&quot; enctype=&quot;multipart/form&ndash;data&quot;&gt;<br/>
+      &lt;img src=&quot;uploaded_img/&lt;?= $fetch_profile[&#39;image&#39;]; ?&gt;&quot; alt=&quot;&quot;&gt;<br/>
+      &lt;div class=&quot;flex&quot;&gt;<br/>
+         &lt;div class=&quot;inputBox&quot;&gt;<br/>
+            &lt;span&gt;username :&lt;/span&gt;<br/>
+            &lt;input type=&quot;text&quot; name=&quot;name&quot; value=&quot;&lt;?= $fetch_profile[&#39;name&#39;]; ?&gt;&quot; placeholder=&quot;update username&quot; required class=&quot;box&quot;&gt;<br/>
+            &lt;span&gt;email :&lt;/span&gt;<br/>
+            &lt;input type=&quot;email&quot; name=&quot;email&quot; value=&quot;&lt;?= $fetch_profile[&#39;email&#39;]; ?&gt;&quot; placeholder=&quot;update email&quot; required class=&quot;box&quot;&gt;<br/>
+            &lt;span&gt;update pic :&lt;/span&gt;<br/>
+            &lt;input type=&quot;file&quot; name=&quot;image&quot; accept=&quot;image/jpg, image/jpeg, image/png&quot; class=&quot;box&quot;&gt;<br/>
+            &lt;input type=&quot;hidden&quot; name=&quot;old_image&quot; value=&quot;&lt;?= $fetch_profile[&#39;image&#39;]; ?&gt;&quot;&gt;<br/>
+         &lt;/div&gt;<br/>
+         &lt;div class=&quot;inputBox&quot;&gt;<br/>
+            &lt;input type=&quot;hidden&quot; name=&quot;old_pass&quot; value=&quot;&lt;?= $fetch_profile[&#39;password&#39;]; ?&gt;&quot;&gt;<br/>
+            &lt;span&gt;old password :&lt;/span&gt;<br/>
+            &lt;input type=&quot;password&quot; name=&quot;update_pass&quot; placeholder=&quot;enter previous password&quot; class=&quot;box&quot;&gt;<br/>
+            &lt;span&gt;new password :&lt;/span&gt;<br/>
+            &lt;input type=&quot;password&quot; name=&quot;new_pass&quot; placeholder=&quot;enter new password&quot; class=&quot;box&quot;&gt;<br/>
+            &lt;span&gt;confirm password :&lt;/span&gt;<br/>
+            &lt;input type=&quot;password&quot; name=&quot;confirm_pass&quot; placeholder=&quot;confirm new password&quot; class=&quot;box&quot;&gt;<br/>
+         &lt;/div&gt;<br/>
+      &lt;/div&gt;<br/>
+      &lt;div class=&quot;flex&ndash;btn&quot;&gt;<br/>
+         &lt;input type=&quot;submit&quot; class=&quot;btn&quot; value=&quot;update profile&quot; name=&quot;update_profile&quot;&gt;<br/>
+         &lt;a href=&quot;admin_page.php&quot; class=&quot;option&ndash;btn&quot;&gt;go back&lt;/a&gt;<br/>
+      &lt;/div&gt;<br/>
+   &lt;/form&gt;<br/>
+<br/>
+&lt;/section&gt;<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+&lt;script src=&quot;js/script.js&quot;&gt;&lt;/script&gt;<br/>
+<br/>
+&lt;/body&gt;<br/>
+&lt;/html&gt;</body></html>

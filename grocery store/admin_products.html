@@ -1,0 +1,173 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title></title>
+</head>
+<body>
+&lt;?php<br/>
+<br/>
+@include &#39;config.php&#39;;<br/>
+<br/>
+session_start();<br/>
+<br/>
+$admin_id = $_SESSION[&#39;admin_id&#39;];<br/>
+<br/>
+if(!isset($admin_id)){<br/>
+   header(&#39;location:login.php&#39;);<br/>
+};<br/>
+<br/>
+if(isset($_POST[&#39;add_product&#39;])){<br/>
+<br/>
+   $name = $_POST[&#39;name&#39;];<br/>
+   $name = filter_var($name, FILTER_SANITIZE_STRING);<br/>
+   $price = $_POST[&#39;price&#39;];<br/>
+   $price = filter_var($price, FILTER_SANITIZE_STRING);<br/>
+   $category = $_POST[&#39;category&#39;];<br/>
+   $category = filter_var($category, FILTER_SANITIZE_STRING);<br/>
+   $details = $_POST[&#39;details&#39;];<br/>
+   $details = filter_var($details, FILTER_SANITIZE_STRING);<br/>
+<br/>
+   $image = $_FILES[&#39;image&#39;][&#39;name&#39;];<br/>
+   $image = filter_var($image, FILTER_SANITIZE_STRING);<br/>
+   $image_size = $_FILES[&#39;image&#39;][&#39;size&#39;];<br/>
+   $image_tmp_name = $_FILES[&#39;image&#39;][&#39;tmp_name&#39;];<br/>
+   $image_folder = &#39;uploaded_img/&#39;.$image;<br/>
+<br/>
+   $select_products = $conn&ndash;&gt;prepare(&quot;SELECT * FROM `products` WHERE name = ?&quot;);<br/>
+   $select_products&ndash;&gt;execute([$name]);<br/>
+<br/>
+   if($select_products&ndash;&gt;rowCount() &gt; 0){<br/>
+      $message[] = &#39;product name already exist!&#39;;<br/>
+   }else{<br/>
+<br/>
+      $insert_products = $conn&ndash;&gt;prepare(&quot;INSERT INTO `products`(name, category, details, price, image) VALUES(?,?,?,?,?)&quot;);<br/>
+      $insert_products&ndash;&gt;execute([$name, $category, $details, $price, $image]);<br/>
+<br/>
+      if($insert_products){<br/>
+         if($image_size &gt; 2000000){<br/>
+            $message[] = &#39;image size is too large!&#39;;<br/>
+         }else{<br/>
+            move_uploaded_file($image_tmp_name, $image_folder);<br/>
+            $message[] = &#39;new product added!&#39;;<br/>
+         }<br/>
+<br/>
+      }<br/>
+<br/>
+   }<br/>
+<br/>
+};<br/>
+<br/>
+if(isset($_GET[&#39;delete&#39;])){<br/>
+<br/>
+   $delete_id = $_GET[&#39;delete&#39;];<br/>
+   $select_delete_image = $conn&ndash;&gt;prepare(&quot;SELECT image FROM `products` WHERE id = ?&quot;);<br/>
+   $select_delete_image&ndash;&gt;execute([$delete_id]);<br/>
+   $fetch_delete_image = $select_delete_image&ndash;&gt;fetch(PDO::FETCH_ASSOC);<br/>
+   unlink(&#39;uploaded_img/&#39;.$fetch_delete_image[&#39;image&#39;]);<br/>
+   $delete_products = $conn&ndash;&gt;prepare(&quot;DELETE FROM `products` WHERE id = ?&quot;);<br/>
+   $delete_products&ndash;&gt;execute([$delete_id]);<br/>
+   $delete_wishlist = $conn&ndash;&gt;prepare(&quot;DELETE FROM `wishlist` WHERE pid = ?&quot;);<br/>
+   $delete_wishlist&ndash;&gt;execute([$delete_id]);<br/>
+   $delete_cart = $conn&ndash;&gt;prepare(&quot;DELETE FROM `cart` WHERE pid = ?&quot;);<br/>
+   $delete_cart&ndash;&gt;execute([$delete_id]);<br/>
+   header(&#39;location:admin_products.php&#39;);<br/>
+<br/>
+<br/>
+}<br/>
+<br/>
+?&gt;<br/>
+<br/>
+&lt;!DOCTYPE html&gt;<br/>
+&lt;html lang=&quot;en&quot;&gt;<br/>
+&lt;head&gt;<br/>
+   &lt;meta charset=&quot;UTF&ndash;8&quot;&gt;<br/>
+   &lt;meta http&ndash;equiv=&quot;X&ndash;UA&ndash;Compatible&quot; content=&quot;IE=edge&quot;&gt;<br/>
+   &lt;meta name=&quot;viewport&quot; content=&quot;width=device&ndash;width, initial&ndash;scale=1.0&quot;&gt;<br/>
+   &lt;title&gt;products&lt;/title&gt;<br/>
+<br/>
+   &lt;!&ndash;&ndash; font awesome cdn link  &ndash;&ndash;&gt;<br/>
+   &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdnjs.cloudflare.com/ajax/libs/font&ndash;awesome/6.1.1/css/all.min.css&quot;&gt;<br/>
+<br/>
+   &lt;!&ndash;&ndash; custom css file link  &ndash;&ndash;&gt;<br/>
+   &lt;link rel=&quot;stylesheet&quot; href=&quot;css/admin_style.css&quot;&gt;<br/>
+<br/>
+&lt;/head&gt;<br/>
+&lt;body&gt;<br/>
+   <br/>
+&lt;?php include &#39;admin_header.php&#39;; ?&gt;<br/>
+<br/>
+&lt;section class=&quot;add&ndash;products&quot;&gt;<br/>
+<br/>
+   &lt;h1 class=&quot;title&quot;&gt;add new product&lt;/h1&gt;<br/>
+<br/>
+   &lt;form action=&quot;&quot; method=&quot;POST&quot; enctype=&quot;multipart/form&ndash;data&quot;&gt;<br/>
+      &lt;div class=&quot;flex&quot;&gt;<br/>
+         &lt;div class=&quot;inputBox&quot;&gt;<br/>
+         &lt;input type=&quot;text&quot; name=&quot;name&quot; class=&quot;box&quot; required placeholder=&quot;enter product name&quot;&gt;<br/>
+         &lt;select name=&quot;category&quot; class=&quot;box&quot; required&gt;<br/>
+            &lt;option value=&quot;&quot; selected disabled&gt;select category&lt;/option&gt;<br/>
+               &lt;option value=&quot;vegitables&quot;&gt;vegitables&lt;/option&gt;<br/>
+               &lt;option value=&quot;fruits&quot;&gt;fruits&lt;/option&gt;<br/>
+               &lt;option value=&quot;meat&quot;&gt;meat&lt;/option&gt;<br/>
+               &lt;option value=&quot;fish&quot;&gt;fish&lt;/option&gt;<br/>
+         &lt;/select&gt;<br/>
+         &lt;/div&gt;<br/>
+         &lt;div class=&quot;inputBox&quot;&gt;<br/>
+         &lt;input type=&quot;number&quot; min=&quot;0&quot; name=&quot;price&quot; class=&quot;box&quot; required placeholder=&quot;enter product price&quot;&gt;<br/>
+         &lt;input type=&quot;file&quot; name=&quot;image&quot; required class=&quot;box&quot; accept=&quot;image/jpg, image/jpeg, image/png&quot;&gt;<br/>
+         &lt;/div&gt;<br/>
+      &lt;/div&gt;<br/>
+      &lt;textarea name=&quot;details&quot; class=&quot;box&quot; required placeholder=&quot;enter product details&quot; cols=&quot;30&quot; rows=&quot;10&quot;&gt;&lt;/textarea&gt;<br/>
+      &lt;input type=&quot;submit&quot; class=&quot;btn&quot; value=&quot;add product&quot; name=&quot;add_product&quot;&gt;<br/>
+   &lt;/form&gt;<br/>
+<br/>
+&lt;/section&gt;<br/>
+<br/>
+&lt;section class=&quot;show&ndash;products&quot;&gt;<br/>
+<br/>
+   &lt;h1 class=&quot;title&quot;&gt;products added&lt;/h1&gt;<br/>
+<br/>
+   &lt;div class=&quot;box&ndash;container&quot;&gt;<br/>
+<br/>
+   &lt;?php<br/>
+      $show_products = $conn&ndash;&gt;prepare(&quot;SELECT * FROM `products`&quot;);<br/>
+      $show_products&ndash;&gt;execute();<br/>
+      if($show_products&ndash;&gt;rowCount() &gt; 0){<br/>
+         while($fetch_products = $show_products&ndash;&gt;fetch(PDO::FETCH_ASSOC)){  <br/>
+   ?&gt;<br/>
+   &lt;div class=&quot;box&quot;&gt;<br/>
+      &lt;div class=&quot;price&quot;&gt;$&lt;?= $fetch_products[&#39;price&#39;]; ?&gt;/&ndash;&lt;/div&gt;<br/>
+      &lt;img src=&quot;uploaded_img/&lt;?= $fetch_products[&#39;image&#39;]; ?&gt;&quot; alt=&quot;&quot;&gt;<br/>
+      &lt;div class=&quot;name&quot;&gt;&lt;?= $fetch_products[&#39;name&#39;]; ?&gt;&lt;/div&gt;<br/>
+      &lt;div class=&quot;cat&quot;&gt;&lt;?= $fetch_products[&#39;category&#39;]; ?&gt;&lt;/div&gt;<br/>
+      &lt;div class=&quot;details&quot;&gt;&lt;?= $fetch_products[&#39;details&#39;]; ?&gt;&lt;/div&gt;<br/>
+      &lt;div class=&quot;flex&ndash;btn&quot;&gt;<br/>
+         &lt;a href=&quot;admin_update_product.php?update=&lt;?= $fetch_products[&#39;id&#39;]; ?&gt;&quot; class=&quot;option&ndash;btn&quot;&gt;update&lt;/a&gt;<br/>
+         &lt;a href=&quot;admin_products.php?delete=&lt;?= $fetch_products[&#39;id&#39;]; ?&gt;&quot; class=&quot;delete&ndash;btn&quot; onclick=&quot;return confirm(&#39;delete this product?&#39;);&quot;&gt;delete&lt;/a&gt;<br/>
+      &lt;/div&gt;<br/>
+   &lt;/div&gt;<br/>
+   &lt;?php<br/>
+      }<br/>
+   }else{<br/>
+      echo &#39;&lt;p class=&quot;empty&quot;&gt;now products added yet!&lt;/p&gt;&#39;;<br/>
+   }<br/>
+   ?&gt;<br/>
+<br/>
+   &lt;/div&gt;<br/>
+<br/>
+&lt;/section&gt;<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+&lt;script src=&quot;js/script.js&quot;&gt;&lt;/script&gt;<br/>
+<br/>
+&lt;/body&gt;<br/>
+&lt;/html&gt;</body></html>
